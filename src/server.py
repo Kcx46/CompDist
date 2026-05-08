@@ -18,7 +18,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = int(sys.argv[1]) 
 origin = port
-server.bind(('192.168.1.78', port))
+server.bind(('172.31.39.105', port))
 server.listen()
 
 clock = 0
@@ -102,8 +102,8 @@ def multicast(msg):
         try:
             
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((host, port))  # ✅ puerto corregido
-            s.sendall((json.dumps(msg) + "\n").encode())  # ✅ FIX encode
+            s.connect((host, port))  #  puerto corregido
+            s.sendall((json.dumps(msg) + "\n").encode())  #  FIX encode
         except Exception as e:
             print("Error multicast:", e)
         finally:
@@ -127,7 +127,7 @@ def consume_items(sm):
             if not sm.buffer:
                 pass
             else:
-                # FORMATO CORRECTO 👇
+                # FORMATO CORRECTO 
                 time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id = sm.buffer[0]
 
                 # =====================
@@ -186,7 +186,7 @@ def receive_items():
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #port to receive from other servers is 9000
-    receive_socket.bind(('192.168.1.78', 5000))
+    receive_socket.bind(('172.31.39.105', 5000))
     receive_socket.listen()
 
     while True:
@@ -224,32 +224,32 @@ def receive_items():
         nuevo_nombre = request.get("nuevo_nombre")
         time_stamp = request.get("timestamp")
 
-        # 🔥 Lamport
+        # Lamport
         with clock_lock:
             clock = max(clock, time_stamp) + 1
             local_time = clock
 
         print(f"Recibido {msg_id} de {sender}")
 
-        # 🔥 inicializar ACKs
+        #  inicializar ACKs
         if msg_id not in acks:
             acks[msg_id] = set()
 
-        # 🔥 agregar ACK propio + sender
+        # agregar ACK propio + sender
         acks[msg_id].add(MY_ID)
         acks[msg_id].add(sender)
 
-        # 🔥 meter al queue con FORMATO CORRECTO
+        #  meter al queue con FORMATO CORRECTO
         request_queue.put((
             local_time,
             id_empleado,
             nuevo_nombre,
             comando,
-            None,  # 👈 no hay cliente
+            None,  # no hay cliente
             msg_id
         ))
 
-        # 🔥 enviar ACK
+        # enviar ACK
         multicast({
             "type": "ACK",
             "id": msg_id,
