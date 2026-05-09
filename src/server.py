@@ -19,7 +19,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 port = int(sys.argv[1]) 
 origin = port
 
-#This information will be used only for clients, not servers.
+#T his information will be used only for clients, not servers.
 server.bind(('172.31.39.105', port))
 server.listen()
 
@@ -29,6 +29,11 @@ clock_lock = threading.Lock()
 acks = {}
 
 sm = ConcurrentStateMachine()
+
+# We will create a log file to store the information about the execution
+with open("log.txt", "w") as log:
+    log.write("New Execution:")
+    
 
 
 def main():
@@ -91,6 +96,7 @@ def main():
                 "origin": origin,
                 "replica": True
                 })
+            
             multicast({
             "type": "ack",
             "timestamp": time_stamp,
@@ -192,6 +198,10 @@ def consume_items(sm):
                             conn.close()
                         except Exception as e:
                             print("Error enviando respuesta:", e)
+
+                    # We write in the log already created at the beggining of the program. 
+                    with open("log.txt", "a") as log:
+                        log.write(msg_id + "\n")
 
        
 
