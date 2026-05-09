@@ -70,15 +70,17 @@ def main():
         acks[msg_id] = set([origin])
 
         print("Nuevo request:", msg_id)
+		
+		with clock_lock:
+                clock += 1
+                time_stamp = clock
 
         request_queue.put((time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id))
         
         # si el comando es modificar, se debe replicar y mandar ack.
         if comando == "modificar":
             #solo si el comando es modificar, se debe modificar nuestro reloj
-            with clock_lock:
-                clock += 1
-                time_stamp = clock
+        
 
             multicast({
                 "comando": comando,
