@@ -185,7 +185,8 @@ def consume_items(sm):
 
                     if conn:
                         try:
-                            conn.sendall((json.dumps(response) + "\n").encode("UTF"))
+                            conn.sendall((json.dumps(response) + "\n").encode("UTF8"))
+
                             conn.close()
                         except Exception as e:
                             print("Error enviando respuesta:", e)
