@@ -111,7 +111,7 @@ def multicast(msg):
             
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((host, port))  #  puerto corregido
-            s.sendall((json.dumps(msg) + "\n").encode())  #  FIX encode
+            s.sendall((json.dumps(msg) + "\n").encode("UTF8"))  #  FIX encode
         except Exception as e:
             print("Error multicast:", e)
         finally:
@@ -149,12 +149,12 @@ def consume_items(sm):
                     response = {
                         "id_empleado": id_empleado,
                         "nombre": res if res else None,
-                        "status": 1 if res else 0
+                        "status": 0 if res else 1
                     }
 
                     if conn:
                         try:
-                            conn.sendall((json.dumps(response) + "\n").encode())
+                            conn.sendall((json.dumps(response) + "\n").encode("UTF8"))
                             conn.close()
                         except Exception as e:
                             print("Error enviando respuesta:", e)
@@ -181,7 +181,7 @@ def consume_items(sm):
 
                     if conn:
                         try:
-                            conn.sendall((json.dumps(response) + "\n").encode())
+                            conn.sendall((json.dumps(response) + "\n").encode("UTF8"))
                             conn.close()
                         except Exception as e:
                             print("Error enviando respuesta:", e)
