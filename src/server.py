@@ -41,7 +41,7 @@ def main():
 
         data = b""
         while not data.endswith(b"\n"):
-            chunk = conn.recv(4096)
+            chunk = conn.recv(50000)
             if not chunk:
                 break
             data += chunk
