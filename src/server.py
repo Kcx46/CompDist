@@ -18,7 +18,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = int(sys.argv[1]) 
 origin = port
-server.bind(('0.0.0.0', port))
+server.bind(('172.31.39.105', port))
 server.listen()
 
 clock = 0
@@ -186,7 +186,7 @@ def receive_items():
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #port to receive from other servers is 9000
-    receive_socket.bind(('0.0.0.0', 5001))
+    receive_socket.bind(('172.31.39.105', 5001))
     receive_socket.listen()
 
     while True:
