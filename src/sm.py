@@ -6,7 +6,7 @@ import time
 class ConcurrentStateMachine:
 	def __init__(self):
 		self.sm = StateMachine()
-		self.IsBufferFull = threading.Semaphore(7)
+		self.IsBufferFull = threading.Semaphore(100)
 		self.IsThereItemsToConsume = threading.Semaphore(0)
 		self.lock = threading.Lock()
 		self.buffer = []

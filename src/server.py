@@ -8,9 +8,9 @@ import queue
 import time
 import sys 
 
-MY_ID = "S1"
-servers = [("52.15.68.80", 9001), ("3.23.104.39", 9010)]
-TOTAL_SERVERS =  3
+
+servers = [("192.168.1.66", 8001)]
+TOTAL_SERVERS =  2
 
 request_queue = queue.Queue()
 
@@ -18,7 +18,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = int(sys.argv[1]) 
 origin = port
-server.bind(('172.31.39.105', port))
+server.bind(('192.168.1.66', port))
 server.listen()
 
 clock = 0
@@ -56,7 +56,8 @@ def main():
         comando = request.get("comando")
         id_empleado = request.get("id_empleado")
         nuevo_nombre = request.get("nuevo_nombre")
-
+        
+        # revision simple y ver que las operaciones sean las correctas
         if comando not in ["modificar", "consultar"]:
             conn.close()
             continue
@@ -65,24 +66,31 @@ def main():
             clock += 1
             time_stamp = clock
 
-        msg_id = f"{MY_ID}_{time_stamp}"
-        acks[msg_id] = set([MY_ID])
+
+        msg_id = f"{origin}_{time_stamp}"
+        acks[msg_id] = set([origin])
 
         print("Nuevo request:", msg_id)
-        replica = False
 
         request_queue.put((time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id))
+        
+        # si el comando es modificar, se debe replicar y mandar ack.
         if comando == "modificar":
             multicast({
-    "comando": comando,
-    "id_empleado": id_empleado,
-    "nuevo_nombre": nuevo_nombre,
-    "sender": MY_ID,
-    "id": msg_id,
-    "timestamp": time_stamp,
-    "origin": MY_ID,
-    "replica": True
-})
+                "comando": comando,
+                "id_empleado": id_empleado,
+                "nuevo_nombre": nuevo_nombre,
+                "sender": origin,
+                "timestamp": time_stamp,
+                "origin": origin,
+                "replica": True
+                })
+            multicast({
+            "type": "ack",
+            "timestamp": time_stamp,
+            "origin": origin,
+            "sender": origin
+            })
       
 		
         
@@ -153,12 +161,12 @@ def consume_items(sm):
 
                     continue
 
-                print("ACKS:", msg_id, acks.get(msg_id))
+                #print("ACKS:", msg_id, acks.get(msg_id))
 
                 # =====================
                 # MODIFICAR (CONSENSO)
                 # =====================
-                if len(acks.get(msg_id, set())) == TOTAL_SERVERS:
+                if len(acks.get(msg_id, set())) >= TOTAL_SERVERS:
                     heapq.heappop(sm.buffer)
 
                     print("Consuming:", msg_id)
@@ -186,14 +194,20 @@ def receive_items():
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #port to receive from other servers is 9000
-    receive_socket.bind(('172.31.39.105', 5001))
+    receive_socket.bind(('192.168.1.66', 5001))
     receive_socket.listen()
 
     while True:
         print("Esperando mensajes de otros servidores...")
         conn, addr = receive_socket.accept()
+        
+        data = b""
+        while not data.endswith(b"\n"):
+                chunk = conn.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
 
-        data = conn.recv(4096).decode()
 
         try:
             request = json.loads(data.strip())
@@ -201,19 +215,25 @@ def receive_items():
             conn.close()
             continue
 
-        msg_id = request.get("id")
         sender = request.get("sender")
+        time_stamp = request.get("timestamp")
+        origin_msg = request.get("origin")
+        msg_id = f"{origin_msg}_{time_stamp}"
 
         # =====================
         # CASO 1: ACK
         # =====================
         if request.get("type") == "ack":
+
+            msg_id = f"{request['origin']}_{request['timestamp']}"
+            sender = request["sender"]
+
             if msg_id not in acks:
                 acks[msg_id] = set()
 
             acks[msg_id].add(sender)
-
-            conn.close()
+            print(acks)
+            conn.close()    
             continue
 
         # =====================
@@ -235,11 +255,15 @@ def receive_items():
         if msg_id not in acks:
             acks[msg_id] = set()
 
-        # agregar ACK propio + sender
-        acks[msg_id].add(MY_ID)
-        acks[msg_id].add(sender)
+        # agregar ACK propio 
+        acks[msg_id].add(origin)
+        
 
-        #  meter al queue con FORMATO CORRECTO
+        
+
+        
+        
+        # una vez que se ha enviado el multicast, mete en cola
         request_queue.put((
             local_time,
             id_empleado,
@@ -252,9 +276,10 @@ def receive_items():
         # enviar ACK
         multicast({
             "type": "ack",
-            "id": msg_id,
-            "sender": MY_ID
-        })
+            "timestamp": time_stamp,
+            "origin": request.get("origin"),
+            "sender": origin
+            })
 
         conn.close()
                 
