@@ -9,7 +9,7 @@ import time
 import sys 
 
 MY_ID = "S1"
-servers = [("192.168.1.78", 5001), ("192.168.1.78", 5002)]
+servers = [("52.15.68.80", 9001), ("3.23.104.39", 9010)]
 TOTAL_SERVERS =  3
 
 request_queue = queue.Queue()
