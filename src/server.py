@@ -9,7 +9,7 @@ import time
 import sys 
 
 
-servers = [("192.168.1.66", 8001)]
+servers = [("18.222.149.23", 9010)]
 TOTAL_SERVERS =  2
 
 request_queue = queue.Queue()
@@ -18,7 +18,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 port = int(sys.argv[1]) 
 origin = port
-server.bind(('192.168.1.66', port))
+server.bind(('173.31.39.105', port))
 server.listen()
 
 clock = 0
@@ -194,13 +194,13 @@ def receive_items():
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #port to receive from other servers is 9000
-    receive_socket.bind(('192.168.1.66', 5001))
+    receive_socket.bind(('173.31.39.105', 5001))
     receive_socket.listen()
 
     while True:
         print("Esperando mensajes de otros servidores...")
         conn, addr = receive_socket.accept()
-        
+
         data = b""
         while not data.endswith(b"\n"):
                 chunk = conn.recv(4096)
