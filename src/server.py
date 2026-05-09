@@ -207,7 +207,7 @@ def receive_items():
         # =====================
         # CASO 1: ACK
         # =====================
-        if request.get("type") == "ACK":
+        if request.get("type") == "ack":
             if msg_id not in acks:
                 acks[msg_id] = set()
 
@@ -251,7 +251,7 @@ def receive_items():
 
         # enviar ACK
         multicast({
-            "type": "ACK",
+            "type": "ack",
             "id": msg_id,
             "sender": MY_ID
         })
