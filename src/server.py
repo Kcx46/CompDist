@@ -72,8 +72,8 @@ def main():
         print("Nuevo request:", msg_id)
 		
 		with clock_lock:
-                clock += 1
-                time_stamp = clock
+            clock += 1
+            time_stamp = clock
 
         request_queue.put((time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id))
         
