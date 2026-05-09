@@ -191,7 +191,7 @@ def receive_items():
 
     while True:
         print("Esperando mensajes de otros servidores...")
-        conn, addr = server.accept()
+        conn, addr = receive_socket.accept()
 
         data = conn.recv(4096).decode()
 
