@@ -186,7 +186,7 @@ def receive_items():
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #port to receive from other servers is 9000
-    receive_socket.bind(('0.0.0.0', 5000))
+    receive_socket.bind(('0.0.0.0', 5001))
     receive_socket.listen()
 
     while True:
