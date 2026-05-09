@@ -70,8 +70,8 @@ def main():
         acks[msg_id] = set([origin])
 
         print("Nuevo request:", msg_id)
-		
-		with clock_lock:
+        
+        with clock_lock:
             clock += 1
             time_stamp = clock
 
