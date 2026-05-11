@@ -198,7 +198,7 @@ def consume_items(sm):
 
                     # We write in the log already created at the beggining of the program. 
                     with open("log.txt", "a") as log:
-                        log.write(msg_id + "\n")
+                        log.write(msg_id + id_empleado + nuevo_nombre + "\n")
 
        
 
