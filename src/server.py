@@ -70,15 +70,14 @@ def main():
             continue
 
     
-
+		with clock_lock:
+            clock += 1
+            time_stamp = clock
+			
         msg_id = f"{origin}_{time_stamp}"
         acks[msg_id] = set([origin])
 
         print("Nuevo request:", msg_id)
-        
-        with clock_lock:
-            clock += 1
-            time_stamp = clock
 
         request_queue.put((time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id))
         
