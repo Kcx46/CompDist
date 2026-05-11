@@ -68,9 +68,7 @@ def main():
         if comando not in ["modificar", "consultar"]:
             conn.close()
             continue
-
-    
-		with clock_lock:
+        with clock_lock:
             clock += 1
             time_stamp = clock
 			
