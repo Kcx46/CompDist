@@ -9,8 +9,8 @@ import time
 import sys 
 
 
-servers = [("13.139.58.164", 9010)]
-TOTAL_SERVERS =  2
+servers = [("3.143.252.144", 9010), ("3.16.161.143", 9000)]
+TOTAL_SERVERS =  3
 
 request_queue = queue.Queue()
 
