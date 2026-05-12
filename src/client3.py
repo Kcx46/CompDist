@@ -2,8 +2,8 @@ import socket
 import json
 import time
 
-HOST = "34.234.90.27"
-PORT = 9000
+HOST = "13.58.140.131"
+PORT = 8000
 
 
 def enviar_mensaje(mensaje):
@@ -43,17 +43,8 @@ def modificar(id_empleado, nuevo_nombre):
 if __name__ == "__main__":
     print(HOST, PORT)
     print(consultar("E14"))
-    print(consultar("E01"))
-    print(consultar("E02"))
-    print(consultar("E14"))
-    print(consultar("E03"))
-    print(consultar("E04"))
-    print(consultar("E05"))
-    print(consultar("E08"))
-    print(consultar("E09"))
-    print(consultar("E13"))
-    print(consultar("E12"))
-    print(consultar("E11"))
-    print(consultar("E10"))
+    print(modificar("E01", "Francisco"))
+    print(modificar("E05", "Filiberto"))
+
    
    
