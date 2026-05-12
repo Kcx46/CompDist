@@ -32,7 +32,7 @@ sm = ConcurrentStateMachine()
 
 # We will create a log file to store the information about the execution
 with open("log.txt", "w") as log:
-    log.write("New Execution:")
+    log.write("New Execution:\n")
     
 
 
