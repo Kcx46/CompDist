@@ -10,7 +10,7 @@ import sys
 
 
 servers = [("3.143.252.144", 9010), ("3.16.161.143", 9001), ("98.91.209.135",9009), ("54.221.33.122", 9000)]
-TOTAL_SERVERS =  4
+TOTAL_SERVERS =  5
 
 request_queue = queue.Queue()
 
