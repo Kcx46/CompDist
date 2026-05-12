@@ -267,6 +267,10 @@ def receive_items():
 
         # Lamport
         with clock_lock:
+            if clock is None:
+                clock=0
+            if time_stamp is None:
+                clock = 0
             clock = max(clock, time_stamp) + 1
             local_time = clock
 
