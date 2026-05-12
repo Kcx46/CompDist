@@ -2,7 +2,7 @@ import socket
 import json
 import time
 
-HOST = "13.58.140.131"
+HOST = "18.225.167.72"
 PORT = 8000
 
 
@@ -42,9 +42,9 @@ def modificar(id_empleado, nuevo_nombre):
 # Ejemplo de uso
 if __name__ == "__main__":
     print(HOST, PORT)
-    print(consultar("E14"))
-    print(modificar("E01", "Francisco"))
-    print(modificar("E05", "Filiberto"))
+  
+    print(modificar("E03", "Francisco Gomez"))
+ 
 
    
    

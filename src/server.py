@@ -270,7 +270,7 @@ def receive_items():
             if clock is None:
                 clock=0
             if time_stamp is None:
-                clock = 0
+                time_stamp = 0
             clock = max(clock, time_stamp) + 1
             local_time = clock
 
