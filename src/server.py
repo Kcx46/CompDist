@@ -64,10 +64,12 @@ def main():
         id_empleado = request.get("id_empleado")
         nuevo_nombre = request.get("nuevo_nombre")
         
-        # revision simple y ver que las operaciones sean las correctas
+        # Simple review about the operations allowed
         if comando not in ["modificar", "consultar"]:
             conn.close()
             continue
+        
+        # This clock is not affecting my modifica 
         with clock_lock:
             clock += 1
             time_stamp = clock
@@ -77,11 +79,12 @@ def main():
 
         print("Nuevo request:", msg_id)
 
+        # Here we store the request in a queue so we can send the acks after that
         request_queue.put((time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id))
         
-        # si el comando es modificar, se debe replicar y mandar ack.
+        # If the command is "modificar", we should let know the other servers about it and send our ack.
         if comando == "modificar":
-            #solo si el comando es modificar, se debe modificar nuestro reloj
+           
         
 
             multicast({
@@ -144,11 +147,11 @@ def consume_items(sm):
             if not sm.buffer:
                 pass
             else:
-                # FORMATO CORRECTO 
+                # Correct unpack of the buffer, in last versions this was failing because of different formats. 
                 time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id = sm.buffer[0]
 
                 # =====================
-                # CONSULTAR (NO CONSENSO)
+                # CONSULTAR 
                 # =====================
                 if comando == "consultar":
                     heapq.heappop(sm.buffer)
@@ -173,9 +176,10 @@ def consume_items(sm):
                 #print("ACKS:", msg_id, acks.get(msg_id))
 
                 # =====================
-                # MODIFICAR (CONSENSO)
+                # MODIFICAR
                 # =====================
                 if len(acks.get(msg_id, set())) >= TOTAL_SERVERS:
+                    # Only if it gets the acks of all the servers, executes it. 
                     heapq.heappop(sm.buffer)
 
                     print("Consuming:", msg_id)
@@ -204,10 +208,13 @@ def consume_items(sm):
 
 
 def receive_items():
+    """
+    This function is the responsible of receiving information from
+    other servers.
+    """
     global clock
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #port to receive from other servers is 9000
     receive_socket.bind(('172.31.39.105', 5001))
     receive_socket.listen()
 
@@ -234,9 +241,9 @@ def receive_items():
         origin_msg = request.get("origin")
         msg_id = f"{origin_msg}_{time_stamp}"
 
-        # =====================
-        # CASO 1: ACK
-        # =====================
+       
+        # CASE 1: ACK
+      
         if request.get("type") == "ack":
 
             msg_id = f"{request['origin']}_{request['timestamp']}"
@@ -250,9 +257,9 @@ def receive_items():
             conn.close()    
             continue
 
-        # =====================
-        # CASO 2: MSG (REPLICA)
-        # =====================
+     
+        # CASE 2: MSG (REPLICA)
+      
         comando = request.get("comando")
         id_empleado = request.get("id_empleado")
         nuevo_nombre = request.get("nuevo_nombre")
@@ -265,28 +272,23 @@ def receive_items():
 
         print(f"Recibido {msg_id} de {sender}")
 
-        #  inicializar ACKs
+        #  Initialize ACKs
         if msg_id not in acks:
             acks[msg_id] = set()
 
         # agregar ACK propio 
         acks[msg_id].add(origin)
         
-
-        
-
-        
-        
         request_queue.put((
             local_time,
             id_empleado,
             nuevo_nombre,
             comando,
-            None,  # no hay cliente
+            None, 
             msg_id
         ))
 
-        # enviar ACK
+        # send ACK ONLY after putting the item in my queue
         multicast({
             "type": "ack",
             "timestamp": time_stamp,
@@ -302,6 +304,9 @@ def receive_items():
 
 
 if __name__ == "__main__":
+    """
+    Starting 4 different threads for every function declared in our code (this can be blocked very easly)
+    """
     threading.Thread(target=main).start()
     threading.Thread(target=produce_items_from_client, args=(sm,)).start()
     threading.Thread(target=receive_items).start()
