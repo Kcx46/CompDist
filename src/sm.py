@@ -6,7 +6,7 @@ import time
 class ConcurrentStateMachine:
 	def __init__(self):
 		self.sm = StateMachine()
-		self.IsBufferFull = threading.Semaphore(100)
+		self.IsBufferFull = threading.Semaphore(1000)
 		self.IsThereItemsToConsume = threading.Semaphore(0)
 		self.lock = threading.Lock()
 		self.buffer = []
@@ -15,9 +15,14 @@ class ConcurrentStateMachine:
 		self.IsThereItemsToConsume.acquire()
 		
 		with self.lock:
-			#key, value, operation = self.buffer.pop(0) esta línea es para cuando tengamos mas operaciones, por ahora solo tenemos modificar y consultar, pero luego tendremos get, set, add, mult, etc.
-			#esto debería consumir el item con el timestamp mas pequeño
+			# This should consume the item with the smallest timestamp but also
+			# should to decide, if there are more than one item with the same timestamp, which one to take
+			# for that, it is nedeed to use the origin to tak the decision
+			# Because of the problems seen in this implementation, I decided to pop the item in the server.py file (lines 191 and 165)
+
 			comando, id_empleado, nuevo_nombre, MY_ID, msg_id, time_stamp, origin, replica, conn = heapq.heappop(self.buffer)
+
+
 			
 		self.IsBufferFull.release()
 		"""
@@ -50,8 +55,9 @@ class ConcurrentStateMachine:
 		self.IsBufferFull.acquire()
 		with self.lock:
 			heapq.heappush(self.buffer, item) 
-			#item tiene una forma de time_stamp, id_empleado, nuevo_nombre, comando,
+			#item tiene una forma de time_stamp, origin, id_empleado, nuevo_nombre, comando,
 		self.IsThereItemsToConsume.release()
+		# possible issue by not releasing IsBufferFull, not changing because it was not part of my original implementation already presented.
 		print(f"Produced: {item}")
 	
 	def consume_consultar(self, id_empleado):
