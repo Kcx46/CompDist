@@ -9,9 +9,10 @@ import time
 import sys 
 
 
-servers = [("3.143.252.144", 9010), ("18.118.103.8", 9001), ("174.129.102.190", 9009), ("50.19.153.132", 9000)]
-TOTAL_SERVERS =  5
+servers = [("192.168.1.66", 8001)]
+TOTAL_SERVERS =  len(servers) + 1
 
+# This queue has the property of sorting the items, that's why I used it. 
 request_queue = queue.Queue()
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,15 +20,18 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 port = int(sys.argv[1]) 
 origin = port
 
-#T his information will be used only for clients, not servers.
-server.bind(('172.31.39.105', port))
+# This information will be used only for clients, not servers.
+server.bind(('192.168.1.66', port))
 server.listen()
 
+# Our Clock should start at zero.
 clock = 0
 clock_lock = threading.Lock()
 
+
 acks = {}
 
+# Instance of my state machine which can be used to handle operations. 
 sm = ConcurrentStateMachine()
 
 # We will create a log file to store the information about the execution
@@ -69,18 +73,25 @@ def main():
             conn.close()
             continue
         
-        # This clock is not affecting my modifica 
+        # This clock is not affecting my readings
         with clock_lock:
             clock += 1
             time_stamp = clock
-			
+
+        # Create the msg ID to be able to store it in the acks dictionary
+        # My assumtion is at this point, the server already knows about the request and for that msg ID 
+        # it is needed to add the value of my port server as ack. This is applied for every operation,
+        # but it does have a repercution only in modifications
         msg_id = f"{origin}_{time_stamp}"
         acks[msg_id] = set([origin])
 
         print("Nuevo request:", msg_id)
+    
 
         # Here we store the request in a queue so we can send the acks after that
-        request_queue.put((time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id))
+        # as we expect to check if it is replcia or not, I declare it
+        replica = False
+        request_queue.put((time_stamp, origin, id_empleado, nuevo_nombre, comando, conn, msg_id, replica))
         
         # If the command is "modificar", we should let know the other servers about it and send our ack.
         if comando == "modificar":
@@ -132,7 +143,7 @@ def multicast(msg):
 
 def produce_items_from_client(sm):
     """
-    This function produce items from the client request so our local machine can consume them.
+    This function produce items from the client or server requests so our local machine can consume them.
     Args: sm (ConcurrentStateMachine): The state machine instance to produce items into.
     Returns: None
     """
@@ -148,7 +159,7 @@ def consume_items(sm):
                 pass
             else:
                 # Correct unpack of the buffer, in last versions this was failing because of different formats. 
-                time_stamp, id_empleado, nuevo_nombre, comando, conn, msg_id = sm.buffer[0]
+                time_stamp, origin, id_empleado, nuevo_nombre, comando, conn, msg_id, replica = sm.buffer[0]
 
                 # =====================
                 # CONSULTAR 
@@ -169,7 +180,7 @@ def consume_items(sm):
                             conn.sendall((json.dumps(response) + "\n").encode("UTF8"))
                             conn.close()
                         except Exception as e:
-                            print("Error enviando respuesta:", e)
+                            print("Error enviando respuesta:", e, conn)
 
                     continue
 
@@ -192,17 +203,23 @@ def consume_items(sm):
                         "status": 1 if res else 0
                     }
 
+                    if replica and replica == True:
+                        # We write in the log already created at the beggining of the program. 
+                        with open("log.txt", "a") as log:
+                            log.write(str(time_stamp) + "," + str(origin) + "," + id_empleado + "," + nuevo_nombre + "\n")
+                        continue 
+
                     if conn:
                         try:
                             conn.sendall((json.dumps(response) + "\n").encode("UTF8"))
 
                             conn.close()
                         except Exception as e:
-                            print("Error enviando respuesta:", e)
+                            print("Error enviando respuesta:", e, conn)
 
                     # We write in the log already created at the beggining of the program. 
                     with open("log.txt", "a") as log:
-                        log.write(msg_id + id_empleado + nuevo_nombre + "\n")
+                        log.write(str(time_stamp) + "," + str(origin) + "," + id_empleado + "," + nuevo_nombre + "," + str(conn) + "\n")
 
        
 
@@ -215,7 +232,7 @@ def receive_items():
     global clock
 
     receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    receive_socket.bind(('172.31.39.105', 5001))
+    receive_socket.bind(('192.168.1.66', 5001))
     receive_socket.listen()
 
     while True:
@@ -256,6 +273,7 @@ def receive_items():
             print(acks)
             conn.close()    
             continue
+        
 
      
         # CASE 2: MSG (REPLICA)
@@ -264,6 +282,8 @@ def receive_items():
         id_empleado = request.get("id_empleado")
         nuevo_nombre = request.get("nuevo_nombre")
         time_stamp = request.get("timestamp")
+        replica = request.get("replica")
+
 
         # Lamport
         with clock_lock:
@@ -285,11 +305,13 @@ def receive_items():
         
         request_queue.put((
             local_time,
+            origin_msg,
             id_empleado,
             nuevo_nombre,
             comando,
-            None, 
-            msg_id
+            conn,
+            msg_id,
+            replica
         ))
 
         # send ACK ONLY after putting the item in my queue
